@@ -1,5 +1,5 @@
 """
-Tenancy service — tenant-scoped data access patterns.
+Tenancy service - tenant-scoped data access patterns.
 """
 
 import structlog
@@ -49,7 +49,7 @@ async def create_organization(name: str, slug: str, plan: str = "free", seat_lim
     Args:
         name: Display name for the organization.
         slug: URL-safe unique identifier.
-        plan: Subscription plan (free, pro, business).
+        plan: Internal access tier key.
         seat_limit: Maximum number of members.
         created_by: User ID of the creator.
 
@@ -95,7 +95,7 @@ async def list_organizations(status: str | None = None, limit: int = 50, offset:
 async def get_org_members(org_id: str, limit: int = 50, offset: int = 0) -> list[dict]:
     """List members of an organization.
 
-    This is a tenant-scoped query — only returns members
+    This is a tenant-scoped query - only returns members
     belonging to the specified organization.
 
     Args:

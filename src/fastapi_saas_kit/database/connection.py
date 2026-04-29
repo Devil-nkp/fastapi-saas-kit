@@ -43,7 +43,7 @@ async def init_db_pool(
 ) -> None:
     """Initialize the asyncpg connection pool.
 
-    Called during application startup. Retries on failure with
+    Called during application initialization. Retries on failure with
     exponential backoff.
     """
     global _pool

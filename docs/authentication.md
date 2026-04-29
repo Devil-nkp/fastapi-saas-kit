@@ -28,12 +28,12 @@ configure_auth(MockAuthProvider())
 
 Mock tokens use the format `mock-{user_id}`:
 
-| Token | User | Role | Plan |
+| Token | User | Role | Access Tier |
 |-------|------|------|------|
 | `mock-user-001` | user@example.com | user | free |
 | `mock-user-002` | pro@example.com | user | pro |
-| `mock-org-admin-001` | orgadmin@example.com | org_admin | business |
-| `mock-main-admin-001` | admin@example.com | main_admin | business |
+| `mock-org-admin-001` | orgadmin@example.com | org_admin | advanced |
+| `mock-main-admin-001` | admin@example.com | main_admin | advanced |
 
 ## JWT Authentication
 
@@ -47,7 +47,7 @@ token = create_access_token(
     user_id="user-123",
     email="user@example.com",
     role="user",
-    plan="pro",
+    plan="pro",  # access tier stored in the existing user model
 )
 
 # Decode a token
@@ -80,7 +80,7 @@ class MyAuthProvider(AuthProvider):
         return CurrentUser(**user_data) if user_data else None
 ```
 
-2. Configure it at startup:
+2. Configure it during application initialization:
 
 ```python
 from fastapi_saas_kit.auth.dependencies import configure_auth
@@ -99,10 +99,10 @@ from fastapi_saas_kit.auth.models import CurrentUser, UserRole
 async def profile(user: CurrentUser = Depends(get_current_user)):
     return {"email": user.email}
 
-# Requires specific plan
-@app.get("/premium")
-async def premium(user: CurrentUser = Depends(require_plan("pro"))):
-    return {"message": "Premium content"}
+# Requires a specific access tier
+@app.get("/advanced")
+async def advanced(user: CurrentUser = Depends(require_plan("pro"))):
+    return {"message": "Advanced workspace access"}
 
 # Requires specific role
 @app.get("/admin")

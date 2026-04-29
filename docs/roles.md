@@ -5,11 +5,11 @@
 fastapi-saas-kit supports three roles with hierarchical access:
 
 ```
-main_admin (level 2) → Full platform access
-    ↑
-org_admin  (level 1) → Organization management
-    ↑
-user       (level 0) → Basic authenticated access
+main_admin (level 2) -> Full platform access
+    ^
+org_admin  (level 1) -> Organization management
+    ^
+user       (level 0) -> Basic authenticated access
 ```
 
 ## Role Details
@@ -17,7 +17,7 @@ user       (level 0) → Basic authenticated access
 ### `user` (Default)
 - Access their own profile and data
 - View their organization's shared data
-- Use features allowed by their plan
+- Use features allowed by their access tier
 
 ### `org_admin`
 - Everything a user can do, plus:
@@ -29,7 +29,7 @@ user       (level 0) → Basic authenticated access
 - Everything an org_admin can do, plus:
 - Access all organizations
 - Create and manage organizations
-- Bypass plan and quota limits
+- Bypass access tier and quota limits
 - Access admin-only endpoints
 
 ## Using Role Gates

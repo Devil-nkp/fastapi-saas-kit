@@ -1,5 +1,5 @@
 """
-Billing router — endpoints for order creation, payment verification, and status.
+Provider adapter router for access requests, verification, and status.
 """
 
 import structlog
@@ -13,21 +13,21 @@ from .adapters.mock import MockBillingProvider
 from .interfaces import BillingProvider
 
 logger = structlog.get_logger("saas_kit.billing")
-router = APIRouter(prefix="/billing", tags=["Billing"])
+router = APIRouter(prefix="/billing", tags=["Access Gates"])
 
-# Module-level billing provider instance
+# Module-level provider adapter instance
 _billing_provider: BillingProvider | None = None
 
 
 def configure_billing(provider: BillingProvider) -> None:
-    """Configure the global billing provider."""
+    """Configure the global provider adapter."""
     global _billing_provider
     _billing_provider = provider
     logger.info("billing_provider_configured", provider=type(provider).__name__)
 
 
 def get_billing_provider() -> BillingProvider:
-    """Get the configured billing provider, defaulting to MockBillingProvider."""
+    """Get the configured provider adapter, defaulting to MockBillingProvider."""
     if _billing_provider is None:
         return MockBillingProvider()
     return _billing_provider
@@ -47,9 +47,9 @@ async def create_order(
     req: CreateOrderRequest,
     user: CurrentUser = Depends(get_current_user),
 ):
-    """Create a billing order for a plan purchase."""
+    """Create an access request through the provider adapter."""
     if not is_valid_plan(req.plan) or req.plan == "free":
-        raise HTTPException(status_code=400, detail="Invalid plan. Choose 'pro' or 'business'.")
+        raise HTTPException(status_code=400, detail="Invalid access tier. Choose 'pro' or higher.")
 
     plan_config = PLAN_CONFIG.get(req.plan)
     if not plan_config:
@@ -69,7 +69,7 @@ async def verify_payment(
     req: VerifyPaymentRequest,
     user: CurrentUser = Depends(get_current_user),
 ):
-    """Verify a payment after the user completes checkout."""
+    """Verify provider callback data."""
     provider = get_billing_provider()
     result = await provider.verify_payment(
         order_id=req.order_id,
@@ -80,7 +80,7 @@ async def verify_payment(
 
 @router.post("/webhook")
 async def billing_webhook(request: Request):
-    """Handle incoming billing provider webhook events."""
+    """Handle incoming provider webhook events."""
     try:
         payload = await request.json()
     except Exception as exc:
@@ -97,7 +97,7 @@ async def billing_webhook(request: Request):
 async def billing_status(
     user: CurrentUser = Depends(get_current_user),
 ):
-    """Get current billing status for the authenticated user."""
+    """Get current access status for the authenticated user."""
     provider = get_billing_provider()
     status = await provider.get_billing_status(user.id)
     return status

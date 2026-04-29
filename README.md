@@ -1,6 +1,6 @@
 # fastapi-saas-kit
 
-Production-ready FastAPI multi-tenant SaaS boilerplate with pluggable auth, RBAC, organizations, plan limits, quotas, billing gates, rate limiting, tests, Docker, and async architecture.
+FastAPI backend starter kit for secure projects with authentication, role-based access, team/organization management, access tiers, usage limits, rate limiting, tests, Docker, and deployment-ready architecture.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com)
@@ -10,15 +10,16 @@ Production-ready FastAPI multi-tenant SaaS boilerplate with pluggable auth, RBAC
 
 ## Why This Exists
 
-Building a SaaS application from scratch means solving the same infrastructure problems every time:
+Real-world FastAPI projects often need the same backend foundation before product-specific work can begin:
 
-- Multi-tenant data isolation
+- Authentication and current-user resolution
 - Role-based access control
-- Plan limits and quota enforcement
-- Billing access gates without vendor lock-in
-- Production-ready project structure, tests, and docs
+- Team and organization management
+- Multi-tenant data isolation
+- Access tiers, usage limits, and quota enforcement
+- Rate limiting, security middleware, tests, Docker, and docs
 
-fastapi-saas-kit provides a reusable foundation so you can focus on product code instead of rebuilding SaaS plumbing.
+fastapi-saas-kit gives you a production-ready backend foundation so you can start from secure project structure instead of rebuilding common API infrastructure.
 
 ## Features
 
@@ -26,10 +27,10 @@ fastapi-saas-kit provides a reusable foundation so you can focus on product code
 |----------|--------------|
 | Authentication | Pluggable `AuthProvider` interface, `MockAuthProvider` for development, JWT utilities |
 | RBAC | `user`, `org_admin`, and `main_admin` roles with hierarchical access control |
-| Multi-tenancy | Organization model, member management, and tenant-scoped data isolation |
-| Plans | Configurable `free`, `pro`, and `business` plans with feature gates |
-| Quotas | Per-plan usage limits with rolling-window enforcement |
-| Billing gates | Pluggable `BillingProvider` interface, mock provider, and payment-provider stub |
+| Teams and organizations | Organization model, member management, and tenant-scoped data isolation |
+| Access tiers | Configurable default tiers with feature gates |
+| Usage limits | Per-tier quotas with rolling-window enforcement |
+| Access gates | Pluggable provider adapter interface, mock provider, and integration stub |
 | Caching | Pluggable `CacheProvider` interface and in-memory provider |
 | Rate limiting | Sliding-window rate limiter with in-memory fallback |
 | Security | HSTS, X-Frame-Options, CSP, and XSS protection headers |
@@ -38,11 +39,9 @@ fastapi-saas-kit provides a reusable foundation so you can focus on product code
 | Docker | Production Dockerfile and local docker-compose setup |
 | CI | GitHub Actions lint, compile, and test workflow |
 | Tests | Focused pytest suite with mock providers |
-| Documentation | Architecture, auth, tenancy, roles, plans, billing, deployment, and API guides |
+| Documentation | Architecture, auth, tenancy, roles, access tiers, deployment, and API guides |
 
-## Quickstart
-
-### Local Development
+## Quick Start
 
 ```bash
 git clone https://github.com/Devil-nkp/fastapi-saas-kit.git
@@ -73,8 +72,8 @@ graph LR
     FASTAPI --> AUTH["AuthProvider"]
     FASTAPI --> RBAC["RBAC Layer"]
     FASTAPI --> TENANCY["Tenant Service"]
-    FASTAPI --> BILLING["BillingProvider"]
-    RBAC --> PLANS["Plan Config"]
+    FASTAPI --> ACCESS["Provider Adapter"]
+    RBAC --> TIERS["Access Tier Config"]
     RBAC --> QUOTAS["Quota Enforcement"]
     TENANCY --> DB["PostgreSQL"]
     FASTAPI --> CACHE["CacheProvider"]
@@ -85,7 +84,7 @@ The adapter pattern lets you swap providers without changing application code:
 | Interface | Development | Production Adapter You Add |
 |-----------|-------------|----------------------------|
 | `AuthProvider` | `MockAuthProvider` | OIDC, hosted auth, or custom JWT |
-| `BillingProvider` | `MockBillingProvider` | Payment processor integration |
+| `BillingProvider` | `MockBillingProvider` | Access or entitlement provider integration |
 | `CacheProvider` | `InMemoryCacheProvider` | Redis, Memcached, or another shared cache |
 
 See [docs/architecture.md](docs/architecture.md) for the full system design.
@@ -123,31 +122,15 @@ from fastapi_saas_kit.auth.models import CurrentUser
 
 @app.get("/profile")
 async def profile(user: CurrentUser = Depends(get_current_user)):
-    return {"email": user.email, "plan": user.plan}
+    return {"email": user.email, "access_tier": user.plan}
 
 
-@app.get("/premium")
-async def premium(user: CurrentUser = Depends(require_plan("pro"))):
-    return {"message": "Premium content"}
+@app.get("/advanced")
+async def advanced(user: CurrentUser = Depends(require_plan("pro"))):
+    return {"message": "Advanced workspace access"}
 ```
 
 See [docs/authentication.md](docs/authentication.md).
-
-## Multi-tenancy
-
-Organizations provide tenant isolation:
-
-```python
-@app.get("/my-data")
-async def my_data(user: CurrentUser = Depends(get_current_user)):
-    data = await db.fetch(
-        "SELECT * FROM projects WHERE organization_id = $1",
-        user.organization_id,
-    )
-    return {"data": data}
-```
-
-See [docs/multi-tenancy.md](docs/multi-tenancy.md).
 
 ## Roles and Permissions
 
@@ -168,7 +151,23 @@ async def org_settings(user=Depends(require_org_admin())):
 
 See [docs/roles.md](docs/roles.md).
 
-## Plans and Quotas
+## Teams and Organizations
+
+Organizations provide tenant isolation:
+
+```python
+@app.get("/my-data")
+async def my_data(user: CurrentUser = Depends(get_current_user)):
+    data = await db.fetch(
+        "SELECT * FROM projects WHERE organization_id = $1",
+        user.organization_id,
+    )
+    return {"data": data}
+```
+
+See [docs/multi-tenancy.md](docs/multi-tenancy.md).
+
+## Access Tiers and Usage Limits
 
 ```python
 from fastapi import Depends
@@ -184,7 +183,7 @@ async def create_project(user=Depends(get_current_user)):
 
 See [docs/plans-and-quotas.md](docs/plans-and-quotas.md).
 
-## Billing Gates
+## Access Gates and Provider Adapters
 
 ```python
 from fastapi_saas_kit.billing.adapters.mock import MockBillingProvider
@@ -194,11 +193,11 @@ from fastapi_saas_kit.billing.router import configure_billing
 configure_billing(MockBillingProvider())
 ```
 
-Live payment integrations are intentionally adapter-based. The project includes interfaces and stubs, not real payment credentials or business-specific billing code.
+The current code keeps `BillingProvider` as the stable interface name, but public usage is adapter-based: add your own provider to resolve access, entitlements, and external events without changing route logic. The project includes interfaces and stubs, not real credentials or project-specific access logic.
 
 See [docs/billing-gates.md](docs/billing-gates.md).
 
-## Example Usage
+## Examples
 
 ```bash
 curl http://localhost:8000/health
@@ -211,7 +210,7 @@ Example apps are available in:
 - [examples/basic_saas](examples/basic_saas)
 - [examples/multi_tenant_app](examples/multi_tenant_app)
 
-## Running Tests
+## Tests
 
 ```bash
 pip install -e ".[dev]"
@@ -224,8 +223,8 @@ ruff check src tests
 
 ```bash
 docker compose up
-docker build -t my-saas .
-docker run -p 8000:8000 -e DATABASE_URL="postgresql://..." -e ENVIRONMENT="production" my-saas
+docker build -t fastapi-backend .
+docker run -p 8000:8000 -e DATABASE_URL="postgresql://..." -e ENVIRONMENT="production" fastapi-backend
 ```
 
 See [docs/deployment.md](docs/deployment.md).
@@ -233,7 +232,7 @@ See [docs/deployment.md](docs/deployment.md).
 ## Roadmap
 
 - Redis cache adapter
-- Full payment provider adapter examples
+- External provider adapter examples
 - OAuth2 / OIDC auth adapter
 - Email notification interface
 - Machine-to-machine authentication

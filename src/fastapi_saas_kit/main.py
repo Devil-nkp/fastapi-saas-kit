@@ -1,5 +1,5 @@
 """
-fastapi-saas-kit — Entry Point
+fastapi-saas-kit - Entry Point
 
 Run with:
     uvicorn fastapi_saas_kit.main:app --reload

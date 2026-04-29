@@ -1,32 +1,34 @@
-# Plans and Quotas
+# Access Tiers and Usage Limits
 
-## Plan Configuration
+## Access Tier Configuration
 
-Three plans are included by default. Customize in `src/fastapi_saas_kit/plans/config.py`:
+Three access tiers are included by default. Customize their internal config in `src/fastapi_saas_kit/plans/config.py`:
 
-| Feature | Free | Pro | Business |
+| Feature | Free | Pro | Advanced |
 |---------|------|-----|----------|
 | Monthly Requests | 100 | 5,000 | Unlimited |
 | Team Members | 1 | 10 | 100 |
 | Projects | 3 | 25 | Unlimited |
 | Storage (MB) | 100 | 5,000 | 50,000 |
-| API Access | ✅ | ✅ | ✅ |
-| Basic Analytics | ✅ | ✅ | ✅ |
-| Advanced Analytics | ❌ | ✅ | ✅ |
-| Priority Support | ❌ | ✅ | ✅ |
-| Custom Branding | ❌ | ❌ | ✅ |
-| Export Data | ❌ | ✅ | ✅ |
-| Webhooks | ❌ | ✅ | ✅ |
-| SSO | ❌ | ❌ | ✅ |
+| API Access | yes | yes | yes |
+| Basic Analytics | yes | yes | yes |
+| Advanced Analytics | no | yes | yes |
+| Priority Support | no | yes | yes |
+| Custom Branding | no | no | yes |
+| Export Data | no | yes | yes |
+| Webhooks | no | yes | yes |
+| SSO | no | no | yes |
 
-## Plan Hierarchy
+The code still uses the `plan` field for compatibility. Public-facing docs describe these values as access tiers.
+
+## Access Tier Hierarchy
 
 ```python
 from fastapi_saas_kit.plans.config import can_access_plan
 
-can_access_plan("business", "pro")   # True — business >= pro
-can_access_plan("pro", "business")   # False — pro < business
-can_access_plan("free", "free")      # True — equal
+can_access_plan("pro", "free")       # True: pro tier >= free tier
+can_access_plan("free", "pro")       # False: free tier < pro tier
+can_access_plan("free", "free")      # True: equal
 ```
 
 ## Feature Gates
@@ -35,13 +37,11 @@ can_access_plan("free", "free")      # True — equal
 from fastapi_saas_kit.plans.config import has_feature
 from fastapi_saas_kit.plans.access import require_feature
 
-# Check in code
 if has_feature(user.plan, "advanced_analytics"):
     ...
 
-# Use as dependency
 @router.get("/analytics")
-async def analytics(user = Depends(require_feature("advanced_analytics"))):
+async def analytics(user=Depends(require_feature("advanced_analytics"))):
     ...
 ```
 
@@ -50,16 +50,10 @@ async def analytics(user = Depends(require_feature("advanced_analytics"))):
 ```python
 from fastapi_saas_kit.plans.quota import check_quota, get_usage_stats
 
-# Check quota before allowing an action
 await check_quota(user, "monthly_requests", current_usage=50)
-# Raises HTTP 402 if over limit
+# Raises HTTP 402 if over the configured usage limit
 
-# Get usage statistics
 stats = get_usage_stats("pro", {"monthly_requests": 2500, "projects": 10})
-# Returns: {
-#   "monthly_requests": {"used": 2500, "limit": 5000, "remaining": 2500, ...},
-#   "projects": {"used": 10, "limit": 25, "remaining": 15, ...},
-# }
 ```
 
 ## Period Reset
@@ -74,17 +68,17 @@ if should_reset_period(user.period_start):
     ...
 ```
 
-## Adding Custom Plans
+## Adding Custom Access Tiers
 
 Edit `PLAN_CONFIG` in `plans/config.py`:
 
 ```python
 PLAN_CONFIG["enterprise"] = {
     "display_name": "Enterprise",
-    "price_cents": 49900,
-    "price_display": "$499/month",
+    "price_cents": 0,
+    "price_display": "Custom",
     "quotas": {
-        "monthly_requests": None,  # Unlimited
+        "monthly_requests": None,
         "team_members": None,
         "projects": None,
         "storage_mb": 500000,
@@ -92,11 +86,9 @@ PLAN_CONFIG["enterprise"] = {
     "features": {
         "api_access": True,
         "sso": True,
-        # ... all features enabled
     },
 }
 
-# Don't forget to update:
 VALID_PLANS = set(PLAN_CONFIG.keys())
 PLAN_HIERARCHY["enterprise"] = 3
 ```

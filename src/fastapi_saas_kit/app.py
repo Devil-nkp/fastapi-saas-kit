@@ -1,5 +1,5 @@
 """
-fastapi-saas-kit — Application Factory
+fastapi-saas-kit - Application Factory
 
 Creates and configures the FastAPI application with all middleware,
 routers, and lifecycle events.
@@ -67,7 +67,7 @@ async def _bootstrap_database(app: FastAPI) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifecycle — startup and shutdown."""
+    """Application lifecycle for initialization and shutdown."""
     settings = get_settings()
 
     logger.info("starting_app", version=settings.APP_VERSION, env=settings.ENVIRONMENT)
@@ -84,7 +84,7 @@ async def lifespan(app: FastAPI):
         # with your implementation during setup
         configure_auth(MockAuthProvider())
 
-    # Configure billing provider
+    # Configure provider adapter
     if settings.BILLING_PROVIDER == "mock":
         configure_billing(MockBillingProvider())
 
@@ -113,7 +113,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.APP_NAME,
         version=settings.APP_VERSION,
-        description="Production-ready FastAPI multi-tenant SaaS boilerplate",
+        description="Production-ready FastAPI backend starter kit",
         docs_url="/docs" if settings.DEBUG else None,
         redoc_url="/redoc" if settings.DEBUG else None,
         lifespan=lifespan,
@@ -150,7 +150,7 @@ def create_app() -> FastAPI:
     # ── Root Health ──────────────────────────────────────
     @app.api_route("/", methods=["GET", "HEAD"])
     async def root():
-        """Root endpoint — lightweight health probe."""
+        """Root endpoint - lightweight health probe."""
         db_ready = bool(getattr(app.state, "db_ready", False))
         return JSONResponse({
             "status": "ok" if db_ready else "starting",

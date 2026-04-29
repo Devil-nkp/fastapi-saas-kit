@@ -1,9 +1,9 @@
 """
-Basic SaaS Example — Minimal single-tenant application.
+Basic Backend Example - minimal single-tenant application.
 
 Demonstrates:
 - FastAPI app with authentication
-- Plan-gated endpoints
+- Access-tier gated endpoints
 - Quota checking
 - Health checks
 
@@ -24,7 +24,7 @@ from fastapi_saas_kit.auth.mock import MockAuthProvider
 from fastapi_saas_kit.auth.models import CurrentUser
 from fastapi_saas_kit.plans.config import get_plan_config
 
-app = FastAPI(title="Basic SaaS Example", version="1.0.0")
+app = FastAPI(title="Basic Backend Example", version="1.0.0")
 
 # Configure mock auth for development
 configure_auth(MockAuthProvider())
@@ -32,7 +32,7 @@ configure_auth(MockAuthProvider())
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to the Basic SaaS Example!", "docs": "/docs"}
+    return {"message": "Welcome to the Basic Backend Example!", "docs": "/docs"}
 
 
 @app.get("/profile")
@@ -42,49 +42,46 @@ async def get_profile(user: CurrentUser = Depends(get_current_user)):
     return {
         "id": user.id,
         "email": user.email,
-        "plan": user.plan,
+        "access_tier": user.plan,
         "role": user.role.value,
-        "plan_details": {
+        "access_tier_details": {
             "name": plan_config["display_name"],
-            "price": plan_config["price_display"],
         },
     }
 
 
 @app.get("/dashboard")
 async def get_dashboard(user: CurrentUser = Depends(get_current_user)):
-    """Basic dashboard — available to all authenticated users."""
+    """Basic dashboard available to all authenticated users."""
     return {
         "message": f"Welcome back, {user.email}!",
-        "plan": user.plan,
-        "features_available": list(
-            k for k, v in get_plan_config(user.plan).get("features", {}).items() if v
-        ),
+        "access_tier": user.plan,
+        "features_available": list(k for k, v in get_plan_config(user.plan).get("features", {}).items() if v),
     }
 
 
 @app.get("/analytics")
 async def get_analytics(user: CurrentUser = Depends(require_plan("pro"))):
-    """Advanced analytics — requires Pro plan or higher."""
+    """Advanced analytics requires Pro access tier or higher."""
     return {
         "message": "Here are your advanced analytics.",
-        "plan": user.plan,
-        "data": {"views": 1234, "conversions": 56, "revenue_cents": 78900},
+        "access_tier": user.plan,
+        "data": {"views": 1234, "events": 56, "quota_units_used": 789},
     }
 
 
-@app.get("/enterprise")
-async def get_enterprise(user: CurrentUser = Depends(require_plan("business"))):
-    """Enterprise features — requires Business plan."""
+@app.get("/workspace")
+async def get_workspace(user: CurrentUser = Depends(require_plan("pro"))):
+    """Advanced workspace features require Pro access tier or higher."""
     return {
-        "message": "Welcome to enterprise features.",
+        "message": "Welcome to advanced workspace features.",
         "sso_enabled": True,
         "custom_branding": True,
     }
 
 
 if __name__ == "__main__":
-    print("\n🚀 Basic SaaS Example")
+    print("\nBasic Backend Example")
     print("   Docs: http://localhost:8000/docs")
     print("   Use 'Authorization: Bearer mock-user-001' for free user")
     print("   Use 'Authorization: Bearer mock-user-002' for pro user")

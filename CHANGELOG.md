@@ -16,11 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `require_role()` and `require_plan()` FastAPI dependencies
 - Multi-tenant organization model with CRUD endpoints
 - Tenant-scoped data access with org isolation
-- Plan configuration system: `free`, `pro`, `business`
-- Feature gates and plan hierarchy
+- Access tier configuration system with default internal tier values
+- Feature gates and access tier hierarchy
 - Quota enforcement with configurable limits and period reset
-- `BillingProvider` interface with `MockBillingProvider`
-- Stripe adapter stub for future integration
+- Provider adapter interface with `MockBillingProvider`
+- External provider stub for future integration
 - `CacheProvider` interface with `InMemoryCacheProvider`
 - Sliding-window rate limiter with in-memory fallback
 - Security headers middleware (HSTS, X-Frame-Options, etc.)
@@ -31,5 +31,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker and docker-compose for local development
 - Comprehensive test suite with pytest
 - GitHub Actions CI pipeline
-- Full documentation suite (architecture, auth, tenancy, roles, plans, billing, deployment, API)
-- Two example applications (basic SaaS, multi-tenant)
+- Full documentation suite for architecture, auth, tenancy, roles, access tiers, deployment, and API usage
+- Two example applications: basic backend starter and multi-tenant app

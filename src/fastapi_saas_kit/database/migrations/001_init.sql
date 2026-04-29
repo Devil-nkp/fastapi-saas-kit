@@ -1,6 +1,6 @@
 -- ============================================================
--- fastapi-saas-kit — Initial Schema
--- Generic multi-tenant SaaS foundation tables.
+-- fastapi-saas-kit - Initial Schema
+-- Generic multi-tenant backend foundation tables.
 -- ============================================================
 
 -- ── Users ───────────────────────────────────────────────────
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS plan_entitlements (
     UNIQUE(user_id, plan)
 );
 
--- ── Billing Events ──────────────────────────────────────────
+-- Provider Events
 CREATE TABLE IF NOT EXISTS billing_events (
     id BIGSERIAL PRIMARY KEY,
     provider_event_id TEXT UNIQUE NOT NULL,

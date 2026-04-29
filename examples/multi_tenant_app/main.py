@@ -1,11 +1,11 @@
 """
-Multi-Tenant App Example — Organization-scoped application.
+Multi-Tenant App Example - organization-scoped application.
 
 Demonstrates:
 - Organization-scoped endpoints
 - Role-based access control
 - Tenant data isolation
-- Billing and quota integration
+- Provider adapter and quota integration
 
 Run:
     python main.py
@@ -20,16 +20,15 @@ from fastapi_saas_kit.auth.dependencies import (
     get_current_user,
     require_main_admin,
     require_org_admin,
-    require_plan,
 )
 from fastapi_saas_kit.auth.mock import MockAuthProvider
 from fastapi_saas_kit.auth.models import CurrentUser
 from fastapi_saas_kit.billing.adapters.mock import MockBillingProvider
 from fastapi_saas_kit.billing.router import configure_billing
-from fastapi_saas_kit.plans.config import get_plan_config, has_feature
+from fastapi_saas_kit.plans.config import has_feature
 from fastapi_saas_kit.plans.quota import check_quota, get_usage_stats
 
-app = FastAPI(title="Multi-Tenant SaaS Example", version="1.0.0")
+app = FastAPI(title="Multi-Tenant Backend Example", version="1.0.0")
 
 # Configure providers
 configure_auth(MockAuthProvider())
@@ -48,14 +47,14 @@ def _get_user_usage(user_id: str) -> dict[str, int]:
 @app.get("/")
 async def root():
     return {
-        "message": "Multi-Tenant SaaS Example",
+        "message": "Multi-Tenant Backend Example",
         "docs": "/docs",
         "endpoints": [
-            "GET /my-org — View your organization",
-            "GET /projects — List projects (quota-tracked)",
-            "POST /projects — Create project (quota-enforced)",
-            "GET /admin/orgs — List all orgs (admin only)",
-            "GET /usage — View your usage stats",
+            "GET /my-org - View your organization",
+            "GET /projects - List projects with usage tracking",
+            "POST /projects - Create project with quota enforcement",
+            "GET /admin/orgs - List all orgs (admin only)",
+            "GET /usage - View your usage stats",
         ],
     }
 
@@ -67,14 +66,13 @@ async def get_my_org(user: CurrentUser = Depends(require_org_admin())):
         "message": f"Organization details for {user.email}",
         "organization_id": user.organization_id,
         "role": user.role.value,
-        "plan": user.plan,
+        "access_tier": user.plan,
     }
 
 
 @app.get("/projects")
 async def list_projects(user: CurrentUser = Depends(get_current_user)):
     """List projects for the current user's organization."""
-    # Tenant isolation: only show data for the user's org
     if not user.organization_id and not user.is_admin:
         return {"projects": [], "message": "Join an organization to see projects."}
 
@@ -98,10 +96,7 @@ async def create_project(
 ):
     """Create a project. Enforces quota limits."""
     usage = _get_user_usage(user.id)
-
-    # Check project quota
     await check_quota(user, "projects", usage.get("projects", 0))
-
     usage["projects"] = usage.get("projects", 0) + 1
 
     return {
@@ -118,15 +113,15 @@ async def get_analytics(user: CurrentUser = Depends(get_current_user)):
             status_code=403,
             detail={
                 "error": "feature_not_available",
-                "message": "Advanced analytics requires Pro plan or higher.",
-                "upgrade_url": "/pricing",
+                "message": "Advanced analytics requires Pro access tier or higher.",
+                "access_url": "/access",
             },
         )
 
     return {
         "views": 5678,
         "unique_visitors": 1234,
-        "conversion_rate": "4.2%",
+        "event_rate": "4.2%",
     }
 
 
@@ -135,7 +130,7 @@ async def get_usage(user: CurrentUser = Depends(get_current_user)):
     """View your current usage statistics."""
     usage = _get_user_usage(user.id)
     stats = get_usage_stats(user.plan, usage)
-    return {"plan": user.plan, "usage": stats}
+    return {"access_tier": user.plan, "usage": stats}
 
 
 @app.get("/admin/orgs")
@@ -143,8 +138,8 @@ async def admin_list_orgs(user: CurrentUser = Depends(require_main_admin())):
     """List all organizations. Main admin only."""
     return {
         "organizations": [
-            {"id": "org-001", "name": "Acme Corp", "plan": "business", "members": 45},
-            {"id": "org-002", "name": "StartupXYZ", "plan": "pro", "members": 8},
+            {"id": "org-001", "name": "Platform Team", "plan": "advanced", "members": 45},
+            {"id": "org-002", "name": "Project Team", "plan": "pro", "members": 8},
             {"id": "org-003", "name": "Solo Dev", "plan": "free", "members": 1},
         ],
         "total": 3,
@@ -152,7 +147,7 @@ async def admin_list_orgs(user: CurrentUser = Depends(require_main_admin())):
 
 
 if __name__ == "__main__":
-    print("\n🏢 Multi-Tenant SaaS Example")
+    print("\nMulti-Tenant Backend Example")
     print("   Docs: http://localhost:8001/docs")
     print("   Use 'Authorization: Bearer mock-user-001' for regular user")
     print("   Use 'Authorization: Bearer mock-org-admin-001' for org admin")

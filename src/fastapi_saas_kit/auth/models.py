@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 
 class UserRole(StrEnum):
-    """Supported user roles in the SaaS platform."""
+    """Supported user roles in the backend platform."""
 
     USER = "user"
     ORG_ADMIN = "org_admin"

@@ -20,4 +20,4 @@ Track real public signals only. Do not invent numbers.
 
 - Record only public or explicitly permitted references.
 - Link to evidence for every non-placeholder entry.
-- Keep private user, customer, and production details out of this file.
+- Keep private user, member, organization, and production details out of this file.

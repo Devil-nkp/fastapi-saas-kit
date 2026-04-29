@@ -1,5 +1,5 @@
 """
-Billing interfaces — abstract base class for pluggable billing providers.
+Provider adapter interfaces for access gates and external events.
 """
 
 from abc import ABC, abstractmethod
@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 
 class OrderResult(BaseModel):
-    """Result of creating a billing order."""
+    """Result of creating a provider access request."""
 
     order_id: str
     amount_cents: int
@@ -19,7 +19,7 @@ class OrderResult(BaseModel):
 
 
 class PaymentResult(BaseModel):
-    """Result of verifying a payment."""
+    """Result of verifying a provider event."""
 
     payment_id: str
     order_id: str
@@ -29,23 +29,11 @@ class PaymentResult(BaseModel):
 
 
 class BillingProvider(ABC):
-    """Abstract interface for billing/payment providers.
+    """Abstract interface for provider adapters.
 
-    Implement this interface to integrate your preferred payment
-    processor (Stripe, Paddle, LemonSqueezy, etc.).
-
-    The boilerplate ships with a MockBillingProvider for development
-    and a StripeStubProvider as a starting point for Stripe integration.
-
-    Example:
-        class StripeBillingProvider(BillingProvider):
-            async def create_order(self, user_id, plan, amount_cents):
-                session = stripe.checkout.Session.create(...)
-                return OrderResult(order_id=session.id, ...)
-
-            async def verify_payment(self, order_id, payment_data):
-                # Verify webhook signature and payment status
-                return PaymentResult(...)
+    Implement this interface to integrate your preferred external
+    access or entitlement provider. The class name is kept stable for
+    compatibility with existing code.
     """
 
     @abstractmethod
@@ -56,16 +44,16 @@ class BillingProvider(ABC):
         amount_cents: int,
         currency: str = "USD",
     ) -> OrderResult:
-        """Create a new billing order for a plan purchase.
+        """Create a new access request through the provider adapter.
 
         Args:
-            user_id: The purchasing user's ID.
-            plan: The plan being purchased.
-            amount_cents: Amount in cents.
-            currency: Currency code.
+            user_id: The user's ID.
+            plan: The requested access tier.
+            amount_cents: Optional amount field used by some adapters.
+            currency: Currency code for adapters that need it.
 
         Returns:
-            OrderResult with order details.
+            OrderResult with provider request details.
         """
         ...
 
@@ -75,11 +63,11 @@ class BillingProvider(ABC):
         order_id: str,
         payment_data: dict,
     ) -> PaymentResult:
-        """Verify a payment after the user completes checkout.
+        """Verify provider callback data.
 
         Args:
             order_id: The order ID from create_order.
-            payment_data: Provider-specific payment verification data.
+            payment_data: Provider-specific verification data.
 
         Returns:
             PaymentResult with verification status.
@@ -92,7 +80,7 @@ class BillingProvider(ABC):
         payload: dict,
         signature: str,
     ) -> dict:
-        """Handle an incoming webhook from the payment provider.
+        """Handle an incoming webhook from the provider.
 
         Args:
             payload: The webhook payload.
@@ -105,12 +93,12 @@ class BillingProvider(ABC):
 
     @abstractmethod
     async def get_billing_status(self, user_id: str) -> dict:
-        """Get the current billing status for a user.
+        """Get the current access status for a user.
 
         Args:
             user_id: The user's ID.
 
         Returns:
-            Dict with billing status details.
+            Dict with access status details.
         """
         ...

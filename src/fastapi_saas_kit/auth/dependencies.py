@@ -1,5 +1,5 @@
 """
-Auth dependencies — FastAPI dependency injection for authentication and RBAC.
+Auth dependencies - FastAPI dependency injection for authentication and RBAC.
 """
 
 import structlog
@@ -13,14 +13,14 @@ from .models import CurrentUser, UserRole
 
 logger = structlog.get_logger("saas_kit.auth")
 
-# Module-level auth provider instance (configured at app startup)
+# Module-level auth provider instance (configured during app initialization)
 _auth_provider: AuthProvider | None = None
 
 
 def configure_auth(provider: AuthProvider) -> None:
     """Configure the global auth provider.
 
-    Call this during app startup to set the authentication provider.
+    Call this during app initialization to set the authentication provider.
 
     Args:
         provider: An implementation of AuthProvider.
@@ -109,9 +109,9 @@ def require_role(minimum_role: UserRole):
 
 
 def require_plan(minimum_plan: str):
-    """Dependency that gates access based on subscription plan.
+    """Dependency that gates access based on the user's access tier.
 
-    Plan hierarchy: free < pro < business
+    Access tier hierarchy: free < pro < business
 
     Usage:
         @router.get("/reports")

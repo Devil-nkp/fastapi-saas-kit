@@ -10,31 +10,25 @@ docker compose up
 ```
 
 This starts:
+
 - PostgreSQL 16 on port 5432
 - The FastAPI app on port 8000
 
 ### Without Docker
 
 ```bash
-# Prerequisites: Python 3.11+, PostgreSQL running locally
-
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 pip install -e ".[dev]"
 cp .env.example .env
-# Edit .env with your database URL
 uvicorn fastapi_saas_kit.main:app --reload
 ```
 
-## Deployment
-
-### Generic Docker Runtime
+## Generic Docker Runtime
 
 ```bash
-# Build the image
-docker build -t fastapi-saas-kit .
+docker build -t fastapi-backend .
 
-# Run with environment variables
 docker run -p 8000:8000 \
   -e DATABASE_URL="postgresql://..." \
   -e AUTH_PROVIDER="jwt" \
@@ -42,44 +36,44 @@ docker run -p 8000:8000 \
   -e BILLING_PROVIDER="mock" \
   -e ENVIRONMENT="production" \
   -e DEBUG="false" \
-  fastapi-saas-kit
+  fastapi-backend
 ```
 
-### Environment Variables for Production
+## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | ✅ | PostgreSQL connection string |
-| `AUTH_PROVIDER` | ✅ | Auth provider (jwt, mock) |
-| `AUTH_JWT_SECRET` | ✅ | JWT signing secret (64+ chars) |
-| `ENVIRONMENT` | ✅ | Set to `production` |
-| `DEBUG` | ✅ | Set to `false` |
-| `FRONTEND_URL` | ✅ | Your frontend origin for CORS |
-| `BILLING_PROVIDER` | Optional | Payment provider |
+| `DATABASE_URL` | yes | PostgreSQL connection string |
+| `AUTH_PROVIDER` | yes | Auth provider (`jwt`, `mock`) |
+| `AUTH_JWT_SECRET` | yes | JWT signing secret (64+ chars) |
+| `ENVIRONMENT` | yes | Set to `production` |
+| `DEBUG` | yes | Set to `false` |
+| `FRONTEND_URL` | yes | Frontend origin for CORS |
+| `BILLING_PROVIDER` | Optional | Provider adapter used by access gates |
 | `CACHE_PROVIDER` | Optional | Cache backend |
 
-### Hosting Platforms
+## Hosting Platforms
 
-This boilerplate works with any platform that supports Docker containers:
+This backend foundation works with any platform that supports Docker containers:
 
-- **AWS**: ECS, Fargate, App Runner
-- **Google Cloud**: Cloud Run, GKE
-- **Azure**: Container Apps, AKS
-- **Fly.io**: `fly launch`
-- **Railway**: Connect repo, auto-deploy
-- **DigitalOcean**: App Platform
+- AWS: ECS, Fargate, App Runner
+- Google Cloud: Cloud Run, GKE
+- Azure: Container Apps, AKS
+- Fly.io: `fly launch`
+- Railway: connect repo, auto-deploy
+- DigitalOcean: App Platform
 
-### Deployment Checklist
+## Deployment Checklist
 
 - [ ] Set `ENVIRONMENT=production` and `DEBUG=false`
 - [ ] Use a strong, random `AUTH_JWT_SECRET` (64+ characters)
 - [ ] Configure `FRONTEND_URL` for CORS
 - [ ] Set up a managed PostgreSQL instance with SSL
-- [ ] Configure a real `AuthProvider` (not mock)
-- [ ] Configure a real `BillingProvider` if accepting payments
+- [ ] Configure a real `AuthProvider` instead of mock auth
+- [ ] Configure a real provider adapter if your access gates depend on an external system
 - [ ] Set up Redis for caching if running multiple workers
 - [ ] Enable HTTPS/TLS
 - [ ] Set up health check monitoring on `/health/ready`
 - [ ] Configure log aggregation
-- [ ] Set up error tracking (Sentry, etc.)
+- [ ] Set up error tracking
 - [ ] Run with multiple workers: `gunicorn -w 4 -k uvicorn.workers.UvicornWorker`

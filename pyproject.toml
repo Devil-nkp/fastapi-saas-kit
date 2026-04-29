@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "fastapi-saas-kit"
 version = "0.1.0"
-description = "Production-ready FastAPI multi-tenant SaaS boilerplate with pluggable auth, RBAC, organizations, plan limits, quotas, billing gates, rate limiting, and async architecture."
+description = "FastAPI backend starter kit with auth, RBAC, teams, access tiers, usage limits, rate limiting, tests, Docker, and deployment-ready architecture."
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.11"
@@ -14,8 +14,9 @@ authors = [
 ]
 keywords = [
     "fastapi",
-    "saas",
+    "backend",
     "multi-tenant",
+    "access-control",
     "rbac",
     "boilerplate",
     "python",

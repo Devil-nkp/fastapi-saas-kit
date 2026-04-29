@@ -102,7 +102,7 @@ class TestQuota:
         from fastapi_saas_kit.plans.quota import check_quota
 
         user = CurrentUser(id="1", email="test@test.com", role=UserRole.USER, plan="business")
-        # Business plan has unlimited monthly_requests
+        # Highest configured tier has unlimited monthly_requests
         await check_quota(user, "monthly_requests", 999999)
 
     def test_usage_stats(self):

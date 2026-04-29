@@ -1,5 +1,5 @@
 -- ============================================================
--- fastapi-saas-kit — Multi-Tenant Extensions
+-- fastapi-saas-kit - Multi-Tenant Extensions
 -- Additional tables for org-level management and audit.
 -- ============================================================
 

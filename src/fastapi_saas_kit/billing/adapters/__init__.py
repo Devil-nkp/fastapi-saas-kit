@@ -1,1 +1,1 @@
-"""Billing adapters — mock and stub implementations."""
+"""Provider adapters - mock and stub implementations."""

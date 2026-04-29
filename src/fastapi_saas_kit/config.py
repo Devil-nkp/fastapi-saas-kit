@@ -1,5 +1,5 @@
 """
-fastapi-saas-kit — Application Configuration
+fastapi-saas-kit - Application Configuration
 Uses Pydantic Settings for type-safe environment variable management.
 """
 
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     )
 
     # ── App ──────────────────────────────────────────
-    APP_NAME: str = "My SaaS App"
+    APP_NAME: str = "My FastAPI App"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
     ENVIRONMENT: str = "production"
@@ -51,8 +51,8 @@ class Settings(BaseSettings):
     RATE_LIMIT_ANONYMOUS: int = 30
     RATE_LIMIT_AUTHENTICATED: int = 60
 
-    # ── Billing Provider ─────────────────────────────
-    BILLING_PROVIDER: str = Field(default="mock", description="Billing provider: 'mock' or 'stripe'")
+    # Provider adapter
+    BILLING_PROVIDER: str = Field(default="mock", description="Provider adapter: 'mock' or 'stripe'")
 
     # ── Validators ───────────────────────────────────
     @field_validator("ENVIRONMENT")

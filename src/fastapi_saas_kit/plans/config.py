@@ -1,10 +1,10 @@
 """
-Plan configuration — defines available plans, limits, and feature gates.
+Access tier configuration - defines available tiers, limits, and feature gates.
 """
 
 # ── Plan Definitions ─────────────────────────────────────────
-# Customize these to match your SaaS pricing structure.
-# Each plan defines quotas, feature flags, and display metadata.
+# Customize these to match your application's access model.
+# Each tier defines quotas, feature flags, and display metadata.
 
 PLAN_CONFIG: dict[str, dict] = {
     "free": {
@@ -52,8 +52,8 @@ PLAN_CONFIG: dict[str, dict] = {
         },
     },
     "business": {
-        "display_name": "Business",
-        "description": "For scaling businesses and enterprises",
+        "display_name": "Advanced",
+        "description": "For larger teams and advanced deployments",
         "price_cents": 9900,
         "price_display": "$99/month",
         "quotas": {
@@ -85,10 +85,10 @@ def get_plan_config(plan: str) -> dict:
     Falls back to the free plan if the given plan is unknown.
 
     Args:
-        plan: Plan name (free, pro, business).
+        plan: Internal access tier key.
 
     Returns:
-        Plan configuration dictionary.
+        Access tier configuration dictionary.
     """
     selected = (plan or "free").lower().strip()
     return dict(PLAN_CONFIG.get(selected, PLAN_CONFIG["free"]))

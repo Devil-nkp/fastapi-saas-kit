@@ -1,10 +1,10 @@
-# Billing Gates
+# Access Gates and Provider Adapters
 
 ## Overview
 
-fastapi-saas-kit uses a pluggable `BillingProvider` interface for payment processing. This allows you to integrate any payment provider without changing your application code.
+fastapi-saas-kit includes a pluggable provider adapter interface for access gates, entitlement checks, and external event handling. The current code-level interface is named `BillingProvider` for compatibility, but you can use it as a generic access provider adapter.
 
-## BillingProvider Interface
+## Provider Adapter Interface
 
 ```python
 class BillingProvider(ABC):
@@ -14,9 +14,9 @@ class BillingProvider(ABC):
     async def get_billing_status(self, user_id) -> dict: ...
 ```
 
-## MockBillingProvider (Development)
+## Mock Provider for Development
 
-All payments succeed immediately. No real money is charged.
+The included `MockBillingProvider` returns deterministic development responses and does not require external credentials.
 
 ```python
 from fastapi_saas_kit.billing.adapters.mock import MockBillingProvider
@@ -25,44 +25,43 @@ from fastapi_saas_kit.billing.router import configure_billing
 configure_billing(MockBillingProvider())
 ```
 
-## Billing Endpoints
+## Access Gate Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/billing/create-order` | Create a billing order |
-| POST | `/billing/verify-payment` | Verify a completed payment |
+| POST | `/billing/create-order` | Create an access request through the configured adapter |
+| POST | `/billing/verify-payment` | Verify an external provider event |
 | POST | `/billing/webhook` | Handle provider webhooks |
-| GET | `/billing/status` | Get user billing status |
+| GET | `/billing/status` | Get user access status |
 
-## Adding a Real Payment Provider
+Endpoint paths remain stable for compatibility. New applications can wrap or rename routes at the application boundary if they prefer access-focused route names.
 
-1. Install your provider's SDK
+## Adding a Provider Adapter
+
+1. Install the provider SDK if needed
 2. Implement `BillingProvider`
-3. Configure at startup
+3. Configure the provider during application initialization
 
 ```python
-class ProviderBillingProvider(BillingProvider):
+class ProviderAccessAdapter(BillingProvider):
     def __init__(self, credential: str):
         self.credential = credential
 
     async def create_order(self, user_id, plan, amount_cents, currency="USD"):
-        provider_order = await self.provider_client.create_checkout(
-            plan=plan,
-            amount_cents=amount_cents,
-            currency=currency,
+        provider_result = await self.provider_client.create_access_request(
+            tier=plan,
             metadata={"user_id": user_id},
         )
         return OrderResult(
-            order_id=provider_order.id,
+            order_id=provider_result.id,
             amount_cents=amount_cents,
-            checkout_url=provider_order.checkout_url,
+            checkout_url=provider_result.redirect_url,
         )
-    # ... implement other methods
 ```
 
 ## Security Notes
 
-- **Never** commit real payment credentials to your repository
-- Use environment variables for all payment credentials
+- Never commit real provider credentials to your repository
+- Use environment variables for all provider credentials
 - Always verify webhook signatures
-- Log all billing events for audit purposes
+- Log provider events for auditability
